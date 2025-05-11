@@ -1,4 +1,4 @@
-import Turf from '../models/turf.js';
+import Turf from '../models/model.turf.js';
 
 export const createTurf = async (req, res) => {
   try {

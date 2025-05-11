@@ -1,6 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
-import Booking from './booking.js';
+import Booking from './model.booking.js';
 
 const Payment = sequelize.define('Payment', {
   id: {

@@ -1,4 +1,4 @@
-import Payment from '../models/payment.js';
+import Payment from '../models/model.payment.js';
 
 export const createPayment = async (req, res) => {
   try {

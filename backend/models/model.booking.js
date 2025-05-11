@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
-import User from './user.js';
-import Turf from './turf.js';
+import User from './model.user.js';
+import Turf from './model.turf.js';
 
 const Booking = sequelize.define('Booking', {
   id: {

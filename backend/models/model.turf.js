@@ -1,6 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
 
+
 const Turf = sequelize.define('Turf', {
   id: {
     type: DataTypes.INTEGER,
