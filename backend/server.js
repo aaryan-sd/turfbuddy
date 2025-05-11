@@ -1,5 +1,5 @@
-const express = require('express');
-const sequelize = require('./config/db');
+import express from 'express';
+import sequelize from './config/db.js'; // Make sure to include `.js`
 
 const app = express();
 const PORT = 5000;
