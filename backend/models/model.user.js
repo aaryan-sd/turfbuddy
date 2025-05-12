@@ -2,25 +2,20 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
 
 const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  name: {
+  name: DataTypes.STRING,
+  mobile: {
     type: DataTypes.STRING,
-    allowNull: false,
-  },
-  phoneno: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
     unique: true,
+    allowNull: false
   },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
+  passwordHash: DataTypes.STRING,
+  role: {
+    type: DataTypes.ENUM('user', 'turfOwner', 'admin'),
+    defaultValue: 'user'
+  }
+}, {
+  tableName: 'Users',
+  timestamps: false
 });
 
 export default User;

@@ -17,7 +17,11 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.14.2",
     "mysql2": "^3.14.1",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "twilio": "^5.6.0"
   },
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
 }
