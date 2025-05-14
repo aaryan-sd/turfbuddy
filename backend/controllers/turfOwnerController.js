@@ -78,49 +78,62 @@ export const loginTurfOwner = async (req, res) => {
   }
 };
 
-// Add a new turf for the Turf Owner
 export const addTurf = async (req, res) => {
-  const { ownerId, name, location, pricePerHour, turfImages } = req.body;
+  const {
+    turfOwnerId,
+    name,
+    location,
+    pricePerHrDaytime,
+    pricePerHrNighttime,
+    turfImages
+  } = req.body;
 
-  if (!ownerId || !name || !location || !pricePerHour || !turfImages) {
+  if (!turfOwnerId || !name || !location || !pricePerHrDaytime || !pricePerHrNighttime || !turfImages) {
     return res.status(400).json({ message: 'All fields are required.' });
   }
 
   try {
-    // Check if the Turf Owner exists
-    const turfOwner = await TurfOwner.findByPk(ownerId);
+    const turfOwner = await TurfOwner.findByPk(turfOwnerId);
     if (!turfOwner) {
       return res.status(404).json({ message: 'Turf Owner not found.' });
     }
 
-    // Create the new turf for the owner
     const newTurf = await Turf.create({
+      turfOwnerId,
       name,
       location,
-      pricePerHour,
+      pricePerHrDaytime,
+      pricePerHrNighttime,
       turfImages,
-      TurfOwnerId: ownerId, // Associate the turf with the turf owner
     });
 
     return res.status(201).json({
       message: 'Turf added successfully.',
-      turf: newTurf
+      turf: {
+        ...newTurf.toJSON(),
+        owner: { name: turfOwner.name }
+      }
     });
   } catch (err) {
-    console.error(err);
+    console.error('Error adding turf:', err);
     return res.status(500).json({ message: 'Something went wrong while adding the turf.' });
   }
 };
 
-// Get all turfs for a specific Turf Owner
 export const getAllTurfsOfOwner = async (req, res) => {
   const { ownerId } = req.params;
 
   try {
-    // Fetch all turfs for the given turf owner
     const turfs = await Turf.findAll({
-      where: { TurfOwnerId: ownerId }, // Filter by Turf Owner
-      attributes: ['id', 'name', 'location', 'pricePerHour', 'turfImages'],
+      where: { turfOwnerId: ownerId },
+      attributes: ['id', 'name', 'location', 'pricePerHrDaytime', 'pricePerHrNighttime', 'turfImages'],
+      include: [
+        {
+          model: TurfOwner,
+          as: 'owner',
+          attributes: ['name'],
+        },
+      ],
     });
 
     if (!turfs.length) {

@@ -2,6 +2,11 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
 
 const Admin = sequelize.define('Admin', {
+  id: {
+  type: DataTypes.INTEGER,
+  autoIncrement: true,
+  primaryKey: true,
+  },
   name: {
     type: DataTypes.STRING,
     allowNull: false
@@ -23,7 +28,7 @@ const Admin = sequelize.define('Admin', {
 
 }, {
   tableName: 'Admins',
-  timestamps: false
+  timestamps: true
 });
 
 export default Admin;

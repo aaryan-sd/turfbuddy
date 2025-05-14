@@ -2,7 +2,7 @@ import express from 'express';
 import sequelize from './config/db.js'; 
 import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.js'; 
-import turfRoutes from './routes/turfRoutes.js';
+import turfOwnerRoutes from './routes/turfOwnerRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';  
 import paymentRoutes from './routes/paymentRoutes.js';
 
@@ -16,9 +16,13 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 
 app.use('/api/users', userRoutes);
-app.use('/api/turfs', turfRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/turfowners', turfOwnerRoutes);
+app.use('/api/admins', adminRoutes);
+
+// app.use('/api/bookings', bookingRoutes);
+// app.use('/api/payments', paymentRoutes);
+
+app.use('/api/auth', authRoutes);
 
 sequelize.authenticate()
   .then(() => {

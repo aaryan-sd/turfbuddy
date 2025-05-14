@@ -2,6 +2,11 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
 
 const TurfOwner = sequelize.define('TurfOwner', {
+  id: {
+  type: DataTypes.INTEGER,
+  autoIncrement: true,
+  primaryKey: true,
+  },
   name: {
     type: DataTypes.STRING,
     allowNull: false
@@ -23,7 +28,7 @@ const TurfOwner = sequelize.define('TurfOwner', {
   
 }, {
   tableName: 'TurfOwners',
-  timestamps: false
+  timestamps: true
 });
 
 export default TurfOwner;
