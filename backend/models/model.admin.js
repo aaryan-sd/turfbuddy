@@ -1,8 +1,11 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
 
-const User = sequelize.define('User', {
-  name: DataTypes.STRING,
+const Admin = sequelize.define('Admin', {
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   mobile: {
     type: DataTypes.STRING,
     unique: true,
@@ -13,10 +16,14 @@ const User = sequelize.define('User', {
     unique: true,
     allowNull: false
   },
-  passwordHash: { type: DataTypes.STRING, allowNull: false },
+  passwordHash: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+
 }, {
-  tableName: 'Users',
+  tableName: 'Admins',
   timestamps: false
 });
 
-export default User;
+export default Admin;
