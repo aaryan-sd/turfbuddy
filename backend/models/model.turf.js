@@ -1,6 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
-import TurfOwner from './TurfOwner.js';  // Assuming TurfOwner model is already defined
+import TurfOwner from '../models/model.turfowner.js';  // Assuming TurfOwner model is already defined
 
 const Turf = sequelize.define('Turf', {
   id: {

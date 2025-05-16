@@ -3,9 +3,10 @@ import sequelize from './config/db.js';
 import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.js'; 
 import turfOwnerRoutes from './routes/turfOwnerRoutes.js';
-import bookingRoutes from './routes/bookingRoutes.js';  
-import paymentRoutes from './routes/paymentRoutes.js';
-import User from './models/model.user.js'; // required for sync
+import adminRoutes from './routes/adminRoutes.js'
+// import bookingRoutes from './routes/bookingRoutes.js';  
+// import paymentRoutes from './routes/paymentRoutes.js';
+// import User from './models/model.user.js'; // required for sync
 
 dotenv.config();
 
