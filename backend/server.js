@@ -5,7 +5,7 @@ import userRoutes from './routes/userRoutes.js';
 import turfOwnerRoutes from './routes/turfOwnerRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';  
 import paymentRoutes from './routes/paymentRoutes.js';
-
+import User from './models/model.user.js'; // required for sync
 
 dotenv.config();
 
@@ -22,14 +22,12 @@ app.use('/api/admins', adminRoutes);
 // app.use('/api/bookings', bookingRoutes);
 // app.use('/api/payments', paymentRoutes);
 
-app.use('/api/auth', authRoutes);
+//app.use('/api/auth', authRoutes);
 
 // ✅ Authenticate & Sync DB
 sequelize.authenticate()
   .then(() => {
     console.log('✅ MySQL connected');
-    
-    return sequelize.sync({ alter: true }); // ✅ Create/update tables
   })
   .then(() => {
     console.log('✅ Database synced');
