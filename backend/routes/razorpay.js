@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import Booking from '../models/model.booking.js'; // Import Booking model
 
-export const razorpayWebhook = async (req, res) => {
+const razorpayWebhook = async (req, res) => {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
   const receivedSignature = req.headers['x-razorpay-signature'];
@@ -54,3 +54,6 @@ export const razorpayWebhook = async (req, res) => {
     return res.status(500).json({ message: 'Error processing webhook' });
   }
 };
+
+
+export default razorpayWebhook;
