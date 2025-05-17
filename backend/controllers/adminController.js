@@ -111,7 +111,7 @@ export const getAllTurfOwners = async (req, res) => {
 export const getAllTurfs = async (req, res) => {
   try {
     const turfs = await Turf.findAll({
-      attributes: ['id', 'name', 'location', 'pricePerHour', 'turfImages'], // Exclude sensitive info
+      attributes: ['id', 'name', 'location', 'pricePerHrDaytime', 'pricePerHrNighttime', 'turfImages'],
     });
 
     if (turfs.length === 0) {

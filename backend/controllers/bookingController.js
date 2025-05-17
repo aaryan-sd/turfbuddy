@@ -22,12 +22,12 @@ export const bookTurf = async (req, res) => {
     const turf = await Turf.findByPk(turfId);
     if (!turf) return res.status(404).json({ message: 'Turf not found.' });
 
-    // Phase 2: Check Slot Availability (Race condition protection)
+    // Phase 2: Check Slot Availability
     const conflictingBookings = await Booking.findAll({
       where: {
         turfId,
         bookingDate,
-        status: { [Op.ne]: 'cancelled' }, // Only consider active/pending bookings
+        status: { [Op.ne]: 'cancelled' },
         [Op.or]: Array.from({ length: endHour - startHour }, (_, i) => {
           const hour = startHour + i;
           return {
@@ -42,7 +42,8 @@ export const bookTurf = async (req, res) => {
       return res.status(409).json({ message: 'Selected time slots are already booked.' });
     }
 
-    // Phase 3: Calculate Total Cost (hour-by-hour)
+    // Phase 3: Calculate Total Cost and Duration
+    const durationHours = endHour - startHour;
     let totalCost = 0;
     for (let hour = startHour; hour < endHour; hour++) {
       totalCost += isDaytime(hour) ? Number(turf.pricePerHrDaytime) : Number(turf.pricePerHrNighttime);
@@ -55,7 +56,6 @@ export const bookTurf = async (req, res) => {
       bookingDate,
       startHour,
       endHour,
-      durationHours: endHour - startHour,
       status: 'pending'
     });
 
@@ -63,8 +63,11 @@ export const bookTurf = async (req, res) => {
     return res.status(201).json({
       message: 'Booking initialized. Proceed to payment to confirm.',
       bookingId: newBooking.id,
-      booking: newBooking,
-      totalCost
+      booking: {
+        ...newBooking.toJSON(),
+        durationHours, // Attach derived duration to response
+        totalCost
+      }
     });
 
   } catch (err) {
