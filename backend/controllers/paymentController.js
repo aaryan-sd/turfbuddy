@@ -3,57 +3,54 @@ import crypto from 'crypto';
 import Payment from '../models/model.payment.js';
 import Booking from '../models/model.booking.js';
 
-// Init Razorpay instance
-const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_SECRET,
-});
 
 // PHASE 2a: Create Razorpay order (Frontend will call this before checkout)
+// controllers/paymentController.js
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
 export const createOrder = async (req, res) => {
-  const { bookingId } = req.body;
-
-  if (!bookingId) {
-    return res.status(400).json({ message: 'Booking ID is required' });
-  }
-
   try {
-    const booking = await Booking.findByPk(bookingId);
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    const { bookingId, amount } = req.body;
 
-    const amount = booking.totalCost * 100; // in paisa
-    const currency = 'INR';
+    if (!bookingId || !amount) {
+      return res.status(400).json({ message: 'bookingId and amount are required.' });
+    }
 
+    // Create order in Razorpay
     const options = {
-      amount,
-      currency,
-      receipt: `receipt_${bookingId}`,
-      notes: { bookingId },
+      amount: amount * 100, // Razorpay works in paise
+      currency: 'INR',
+      receipt: `receipt_order_${bookingId}`,
     };
 
-    const razorpayOrder = await razorpay.orders.create(options);
+    const order = await razorpay.orders.create(options);
 
-    // ✅ Make sure to include razorpayOrder.id here
+    // Save in DB
     const payment = await Payment.create({
       bookingId,
-      amount: amount / 100, // Store in INR
-      currency,
-      razorpayOrderId: razorpayOrder.id, // ✅ required field
-      status: 'created',
+      razorpayOrderId: order.id,
+      amount,
+      currency: 'INR',
+      status: 'pending',
     });
 
-    return res.status(201).json({
-      message: 'Order created',
-      orderId: razorpayOrder.id,
-      currency,
-      amount: amount / 100,
+    res.status(201).json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      bookingId,
+      paymentId: payment.id,
     });
-
   } catch (err) {
     console.error('Error in createOrder:', err);
-    return res.status(500).json({ message: 'Failed to create Razorpay order' });
+    res.status(500).json({ message: 'Failed to create Razorpay order.' });
   }
 };
+
 
 // PHASE 2b: Verify Razorpay signature and update DB
 export const confirmPayment = async (req, res) => {
