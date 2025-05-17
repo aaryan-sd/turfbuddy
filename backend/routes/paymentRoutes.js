@@ -1,9 +1,14 @@
+// routes/paymentRoutes.js
+
 import express from 'express';
-// import { createPayment, getPayments } from '../controllers/paymentController.js';
+import { confirmPayment } from '../controllers/paymentController.js';
 
-// const router = express.Router();
+const router = express.Router();
 
-// router.post('/payments', createPayment);
-// router.get('/payments', getPayments);
+// 1. Create Razorpay Order (Phase 2a - called before Razorpay checkout starts)
+router.post('/create-order', createOrder);
 
-// export default router;
+// Phase 2: Confirm payment and booking
+router.post('/confirmpayment', confirmPayment);
+
+export default router;

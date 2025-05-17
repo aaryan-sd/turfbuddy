@@ -13,10 +13,26 @@ const Booking = sequelize.define('Booking', {
     type: DataTypes.DATE,
     allowNull: false,
   },
+  startHour: {
+  type: DataTypes.INTEGER,
+  allowNull: false,
+  },
+  endHour: {
+  type: DataTypes.INTEGER,
+  allowNull: false,
+  },
   durationHours: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  status: {
+    type: DataTypes.ENUM('pending', 'confirmed', 'cancelled'),
+    defaultValue: 'pending',
+    allowNull: false,
+  }
+}, {
+  tableName: 'Bookings',
+  timestamps: true,
 });
 
 // Associations

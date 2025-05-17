@@ -1,9 +1,11 @@
+// routes/bookingRoutes.js
+
 import express from 'express';
-// import { createBooking, getBookings } from '../controllers/bookingController.js';
+import { bookTurf } from '../controllers/bookingController.js';
 
-// const router = express.Router();
+const router = express.Router();
 
-// router.post('/bookings', createBooking);
-// router.get('/bookings', getBookings);
+// Phase 1: Initiate booking, return cost
+router.post('/bookturf', bookTurf);
 
-// export default router;
+export default router;

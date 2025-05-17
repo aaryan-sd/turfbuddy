@@ -17,14 +17,14 @@ const Turf = sequelize.define('Turf', {
     allowNull: false,
   },
   pricePerHrDaytime: {
-    type: DataTypes.FLOAT,
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
     validate: {
       min: 0,  // Ensuring daytime price is not negative
     },
   },
   pricePerHrNighttime: {
-    type: DataTypes.FLOAT,
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
     validate: {
       min: 0,  // Ensuring nighttime price is not negative

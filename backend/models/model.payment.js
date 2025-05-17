@@ -8,22 +8,57 @@ const Payment = sequelize.define('Payment', {
     autoIncrement: true,
     primaryKey: true,
   },
+
+  bookingId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Bookings',
+      key: 'id',
+    },
+    onDelete: 'CASCADE',
+  },
+
+  // Razorpay fields
+  razorpayOrderId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  razorpayPaymentId: {
+    type: DataTypes.STRING,
+    allowNull: true,  // Populated after payment
+  },
+  razorpaySignature: {
+    type: DataTypes.STRING,
+    allowNull: true,  // Used to verify payment signature
+  },
+
   amount: {
-    type: DataTypes.FLOAT,
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
-  paymentDate: {
-    type: DataTypes.DATE,
+
+  currency: {
+    type: DataTypes.STRING,
     allowNull: false,
+    defaultValue: 'INR',
   },
+
   status: {
     type: DataTypes.ENUM('pending', 'completed', 'failed'),
     defaultValue: 'pending',
   },
+
+  paymentDate: {
+    type: DataTypes.DATE,
+    allowNull: true,  // Filled when payment is completed
+  },
+}, {
+  tableName: 'Payments',
+  timestamps: true,
 });
 
-// Associations
-Booking.hasOne(Payment, { foreignKey: 'bookingId' });
-Payment.belongsTo(Booking, { foreignKey: 'bookingId' });
+Booking.hasOne(Payment, { foreignKey: 'bookingId', as: 'payment' });
+Payment.belongsTo(Booking, { foreignKey: 'bookingId', as: 'booking' });
 
 export default Payment;
