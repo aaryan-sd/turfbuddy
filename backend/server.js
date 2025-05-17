@@ -7,6 +7,7 @@ import adminRoutes from './routes/adminRoutes.js'
 import bookingRoutes from './routes/bookingRoutes.js';  
 import paymentRoutes from './routes/paymentRoutes.js';
 // import User from './models/model.user.js'; // required for sync
+import razorpayRoutes from './routes/razorpay.js';
 
 dotenv.config();
 
@@ -24,6 +25,20 @@ app.use('/api/booking', bookingRoutes);
 app.use('/api/payment', paymentRoutes);
 
 //app.use('/api/auth', authRoutes);
+
+// 🔐 Add verify middleware to capture raw body for Razorpay webhook
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      if (req.originalUrl === '/webhook/razorpay') {
+        req.rawBody = buf.toString();
+      }
+    },
+  })
+);
+
+// Route for razorpay webhook
+app.use('/webhook', razorpayRoutes); // or however you registered the webhook
 
 // ✅ Authenticate & Sync DB
 sequelize.authenticate()
