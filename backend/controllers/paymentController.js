@@ -11,38 +11,47 @@ const razorpayInstance = new Razorpay({
 
 // PHASE 2a: Create Razorpay order (Frontend will call this before checkout)
 export const createOrder = async (req, res) => {
-  const { amount, bookingId, currency = 'INR' } = req.body;
+  const { bookingId } = req.body;
 
-  if (!amount || !bookingId) {
-    return res.status(400).json({ message: 'Amount and bookingId are required.' });
+  if (!bookingId) {
+    return res.status(400).json({ message: 'Booking ID is required' });
   }
 
   try {
-    // Create order on Razorpay
+    const booking = await Booking.findByPk(bookingId);
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    const amount = booking.totalCost * 100; // in paisa
+    const currency = 'INR';
+
     const options = {
-      amount: Math.round(amount * 100), // Convert to paise
+      amount,
       currency,
-      receipt: `receipt_booking_${bookingId}`,
+      receipt: `receipt_${bookingId}`,
+      notes: { bookingId },
     };
 
-    const order = await razorpayInstance.orders.create(options);
+    const razorpayOrder = await razorpay.orders.create(options);
 
-    // Create payment entry in DB (status: pending)
-    await Payment.create({
+    // ✅ Make sure to include razorpayOrder.id here
+    const payment = await Payment.create({
       bookingId,
-      amount,
-      status: 'pending',
+      amount: amount / 100, // Store in INR
+      currency,
+      razorpayOrderId: razorpayOrder.id, // ✅ required field
+      status: 'created',
     });
 
-    return res.status(200).json({
-      orderId: order.id,
-      currency: order.currency,
-      amount: order.amount,
+    return res.status(201).json({
+      message: 'Order created',
+      orderId: razorpayOrder.id,
+      currency,
+      amount: amount / 100,
     });
 
-  } catch (error) {
-    console.error('Error in createOrder:', error);
-    return res.status(500).json({ message: 'Failed to create Razorpay order.' });
+  } catch (err) {
+    console.error('Error in createOrder:', err);
+    return res.status(500).json({ message: 'Failed to create Razorpay order' });
   }
 };
 
