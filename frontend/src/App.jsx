@@ -1,9 +1,16 @@
-export default function App() {
+import { Routes, Route } from "react-router-dom";
+import Signup from "./Pages/User/Signup.jsx";
+// import OTPVerify from "./Pages/User/OTPVerify.jsx";
+import Login from "./Pages/User/Login.jsx"
+
+function App() {
   return (
-    <div className="h-screen bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-      <h1 className="text-4xl font-bold text-white">
-        Tailwind CSS is working! 🎉
-      </h1>
-    </div>
+    <Routes>
+      <Route path="/" element={<Signup />} />
+      {/* <Route path="/verify" element={<OTPVerify />} />  */}
+      <Route path="/login" element={<Login />} />
+    </Routes>
   );
 }
+
+export default App;
