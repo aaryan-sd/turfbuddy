@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../firebase";
+import { auth } from "../firebase";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function OTPVerify() {
   const [otp, setOtp] = useState("");
   const [confirmation, setConfirmation] = useState(null);
+  const navigate = useNavigate();
   const phone = localStorage.getItem("phone");
 
   useEffect(() => {
@@ -13,40 +16,35 @@ export default function OTPVerify() {
       return;
     }
 
-    const initializeRecaptcha = () => {
-      if (!window.recaptchaVerifier && document.getElementById("recaptcha-container")) {
-        window.recaptchaVerifier = new RecaptchaVerifier(
-          "recaptcha-container",
-          {
-            size: "invisible",
-            callback: (response) => {
-              // reCAPTCHA solved
-            },
-            "expired-callback": () => {
-              alert("reCAPTCHA expired. Please try again.");
-            },
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        "recaptcha-container",
+        {
+          size: "invisible",
+          callback: () => {},
+          "expired-callback": () => {
+            alert("reCAPTCHA expired. Please refresh.");
           },
-          auth
-        );
+        },
+        auth
+      );
+    }
 
-        // Send OTP
-        signInWithPhoneNumber(auth, "+91" + phone, window.recaptchaVerifier)
-          .then((confirmationResult) => {
-            setConfirmation(confirmationResult);
-          })
-          .catch((err) => {
-            console.error("signInWithPhoneNumber Error", err);
-            alert("Failed to send OTP: " + err.message);
-          });
-      }
-    };
+    const recaptcha = window.recaptchaVerifier;
 
-    // Delay to ensure DOM is ready
-    setTimeout(initializeRecaptcha, 500);
+    signInWithPhoneNumber(auth, `+91${phone}`, recaptcha)
+      .then((confirmationResult) => {
+        setConfirmation(confirmationResult);
+      })
+      .catch((error) => {
+        console.error("OTP send failed:", error);
+        alert("Failed to send OTP: " + error.message);
+      });
   }, [phone]);
 
   const handleVerify = async () => {
-    if (!otp || !confirmation) return alert("Please enter OTP.");
+    if (!otp || !confirmation) return alert("Please enter the OTP.");
+
     try {
       const result = await confirmation.confirm(otp);
       const idToken = await result.user.getIdToken();
@@ -56,14 +54,17 @@ export default function OTPVerify() {
       });
 
       if (res.data.verified) {
-        alert("Phone verified!");
-        // Redirect or update state as needed
+        alert("Phone verified successfully!");
+        localStorage.removeItem("phone");
+        navigate("/login");
       } else {
-        alert("Verification failed.");
+        alert("Phone verification failed.");
       }
     } catch (err) {
-      console.error(err);
-      alert("Invalid OTP or verification failed.");
+      console.error("OTP verification failed:", err);
+      alert("Invalid OTP. Please try again.");
+      localStorage.removeItem("phone");
+      navigate("/");
     }
   };
 
@@ -84,7 +85,6 @@ export default function OTPVerify() {
         >
           Verify
         </button>
-        {/* This must exist in DOM for reCAPTCHA to mount */}
         <div id="recaptcha-container"></div>
       </div>
     </div>

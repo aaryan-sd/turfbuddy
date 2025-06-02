@@ -1,135 +1,105 @@
-import admin from 'firebase-admin';
-import User from '../models/model.user.js';
-import TurfOwner from '../models/model.turfowner.js';
+const User = require("../models/User");
+const TurfOwner = require("../models/TurfOwner");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const admin = require("../config/firebase"); // Firebase Admin SDK
 
-// Function to verify Firebase token for User
-export const verifyFirebaseTokenForUser = async (req, res) => {
-  const { idToken } = req.body;
+const JWT_SECRET = "jwtsecret"; // Replace with env variable in production
 
+// === COMMON ===
+const verifyFirebaseToken = async (idToken) => {
   try {
-    // Verify Firebase token
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const mobile = decodedToken.phone_number;
-
-    // Find the user in the database
-    const user = await User.findOne({ where: { mobile } });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found with this mobile.' });
-    }
-
-    // User found, return success response
-    res.status(200).json({ verified: true, mobile: user.mobile });
+    return decodedToken;
   } catch (err) {
-    res.status(401).json({ verified: false, error: 'Invalid token' });
+    console.error("Firebase token verification failed:", err);
+    throw new Error("Invalid Firebase token");
   }
 };
 
-// Function to verify Firebase token for TurfOwner
-export const verifyFirebaseTokenForTurfOwner = async (req, res) => {
-  const { idToken } = req.body;
+// === USER CONTROLLERS ===
+const registerUser = async (req, res) => {
+  const { name, email, mobile, password } = req.body;
 
-  try {
-    // Verify Firebase token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const mobile = decodedToken.phone_number;
-
-    // Find the turf owner in the database
-    const turfOwner = await TurfOwner.findOne({ where: { mobile } });
-
-    if (!turfOwner) {
-      return res.status(404).json({ message: 'TurfOwner not found with this mobile.' });
-    }
-
-    // TurfOwner found, return success response
-    res.status(200).json({ verified: true, mobile: turfOwner.mobile });
-  } catch (err) {
-    res.status(401).json({ verified: false, error: 'Invalid token' });
-  }
-};
-
-// User Registration
-export const registerUser = async (req, res) => {
-  const { name, mobile, email, password } = req.body;
-
-  if (!name || !mobile || !email || !password) {
-    return res.status(400).json({ message: 'All fields are required.' });
+  if (!name || !email || !mobile || !password) {
+    return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(409).json({ message: 'User already exists with this email.' });
-    }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ name, email, mobile, password: hashedPassword });
+    await newUser.save();
 
-    const newUser = await User.create({
-      name,
-      mobile,
-      email,
-      passwordHash
-    });
-
-    return res.status(201).json({ message: 'User registered successfully.', user: { id: newUser.id, name: newUser.name, email: newUser.email } });
+    res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Something went wrong.' });
+    console.error("Register error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// User Login
-export const loginUser = async (req, res) => {
+const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required.' });
-  }
+  if (!email || !password)
+    return res.status(400).json({ message: "Email and password required" });
 
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1d" });
 
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials.' });
-    }
-
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-      expiresIn: '7d'
-    });
-
-    return res.status(200).json({
-      message: 'Login successful.',
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
-      }
-    });
+    res.json({ token });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Something went wrong.' });
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// TurfOwner Registration
-export const registerTurfOwner = async (req, res) => {
+const verifyUser = async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) return res.status(400).json({ message: "ID token is required" });
+
+  try {
+    const decoded = await verifyFirebaseToken(idToken);
+
+    const user = await User.findOne({ mobile: decoded.phone_number.replace("+91", "") });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found, deleting..." });
+    }
+
+    // Optionally mark user as verified here
+
+    res.status(200).json({ verified: true, uid: decoded.uid });
+  } catch (err) {
+    // Delete user if verification fails
+    const phone = req.body.phone;
+    if (phone) {
+      await User.findOneAndDelete({ mobile: phone });
+    }
+    res.status(401).json({ verified: false, message: err.message });
+  }
+};
+
+// === TURF OWNER CONTROLLERS ===
+const registerTurfOwner = async (req, res) => {
   const { name, mobile, email, password } = req.body;
 
   if (!name || !mobile || !email || !password) {
-    return res.status(400).json({ message: 'All fields are required.' });
+    return res.status(400).json({ message: "All fields are required." });
   }
 
   try {
     const existingTurfOwner = await TurfOwner.findOne({ where: { email } });
     if (existingTurfOwner) {
-      return res.status(409).json({ message: 'TurfOwner already exists with this email.' });
+      return res.status(409).json({ message: "TurfOwner already exists with this email." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -138,52 +108,95 @@ export const registerTurfOwner = async (req, res) => {
       name,
       mobile,
       email,
-      passwordHash
+      passwordHash,
     });
 
-    return res.status(201).json({ message: 'TurfOwner registered successfully.', turfOwner: { id: newTurfOwner.id, name: newTurfOwner.name, email: newTurfOwner.email } });
+    return res.status(201).json({
+      message: "TurfOwner registered successfully.",
+      turfOwner: {
+        id: newTurfOwner.id,
+        name: newTurfOwner.name,
+        email: newTurfOwner.email,
+      },
+    });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: 'Something went wrong.' });
+    return res.status(500).json({ message: "Something went wrong." });
   }
 };
 
-// TurfOwner Login
-export const loginTurfOwner = async (req, res) => {
+const loginTurfOwner = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required.' });
+    return res.status(400).json({ message: "Email and password are required." });
   }
 
   try {
     const turfOwner = await TurfOwner.findOne({ where: { email } });
 
     if (!turfOwner) {
-      return res.status(404).json({ message: 'TurfOwner not found.' });
+      return res.status(404).json({ message: "TurfOwner not found." });
     }
 
     const isMatch = await bcrypt.compare(password, turfOwner.passwordHash);
 
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials.' });
+      return res.status(401).json({ message: "Invalid credentials." });
     }
 
     const token = jwt.sign({ id: turfOwner.id, email: turfOwner.email }, JWT_SECRET, {
-      expiresIn: '7d'
+      expiresIn: "7d",
     });
 
     return res.status(200).json({
-      message: 'Login successful.',
+      message: "Login successful.",
       token,
       turfOwner: {
         id: turfOwner.id,
         name: turfOwner.name,
-        email: turfOwner.email
-      }
+        email: turfOwner.email,
+      },
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: 'Something went wrong.' });
+    return res.status(500).json({ message: "Something went wrong." });
   }
+};
+
+const verifyTurfOwner = async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) return res.status(400).json({ message: "ID token is required" });
+
+  try {
+    const decoded = await verifyFirebaseToken(idToken);
+
+    const turfOwner = await TurfOwner.findOne({ where: { mobile: decoded.phone_number.replace("+91", "") } });
+
+    if (!turfOwner) {
+      return res.status(404).json({ message: "TurfOwner not found, deleting..." });
+    }
+
+    // Optionally mark turfOwner as verified here
+
+    res.status(200).json({ verified: true, uid: decoded.uid });
+  } catch (err) {
+    // Delete turfOwner if verification fails
+    const phone = req.body.phone;
+    if (phone) {
+      await TurfOwner.destroy({ where: { mobile: phone } });
+    }
+    res.status(401).json({ verified: false, message: err.message });
+  }
+};
+
+// EXPORTS
+module.exports = {
+  registerUser,
+  loginUser,
+  verifyUser,
+  registerTurfOwner,
+  loginTurfOwner,
+  verifyTurfOwner,
+  verifyFirebaseToken,
 };
