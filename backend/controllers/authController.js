@@ -1,10 +1,10 @@
-const User = require("../models/User");
-const TurfOwner = require("../models/TurfOwner");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const admin = require("../config/firebase"); // Firebase Admin SDK
+import User from "../models/model.user.js";
+import TurfOwner from "../models/model.turfowner.js";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import admin from "../config/firebase.js";
 
-const JWT_SECRET = "jwtsecret"; // Replace with env variable in production
+const JWT_SECRET = process.env.JWT_SECRET || "jwtsecret";
 
 // === COMMON ===
 const verifyFirebaseToken = async (idToken) => {
@@ -68,18 +68,14 @@ const verifyUser = async (req, res) => {
 
   try {
     const decoded = await verifyFirebaseToken(idToken);
-
     const user = await User.findOne({ mobile: decoded.phone_number.replace("+91", "") });
 
     if (!user) {
       return res.status(404).json({ message: "User not found, deleting..." });
     }
 
-    // Optionally mark user as verified here
-
     res.status(200).json({ verified: true, uid: decoded.uid });
   } catch (err) {
-    // Delete user if verification fails
     const phone = req.body.phone;
     if (phone) {
       await User.findOneAndDelete({ mobile: phone });
@@ -171,17 +167,16 @@ const verifyTurfOwner = async (req, res) => {
   try {
     const decoded = await verifyFirebaseToken(idToken);
 
-    const turfOwner = await TurfOwner.findOne({ where: { mobile: decoded.phone_number.replace("+91", "") } });
+    const turfOwner = await TurfOwner.findOne({
+      where: { mobile: decoded.phone_number.replace("+91", "") },
+    });
 
     if (!turfOwner) {
       return res.status(404).json({ message: "TurfOwner not found, deleting..." });
     }
 
-    // Optionally mark turfOwner as verified here
-
     res.status(200).json({ verified: true, uid: decoded.uid });
   } catch (err) {
-    // Delete turfOwner if verification fails
     const phone = req.body.phone;
     if (phone) {
       await TurfOwner.destroy({ where: { mobile: phone } });
@@ -191,7 +186,7 @@ const verifyTurfOwner = async (req, res) => {
 };
 
 // EXPORTS
-module.exports = {
+export {
   registerUser,
   loginUser,
   verifyUser,

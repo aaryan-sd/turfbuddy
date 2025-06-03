@@ -13,7 +13,7 @@ const verifyJWT = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // Attach decoded payload (e.g. id, email) to request
+    req.user = decoded;
     next();
   } catch (err) {
     console.error("JWT verification failed:", err);
@@ -21,4 +21,4 @@ const verifyJWT = (req, res, next) => {
   }
 };
 
-module.exports = verifyJWT;
+export default verifyJWT;
